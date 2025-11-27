@@ -46,6 +46,8 @@ export const StartMenu: React.FC<StartMenuProps> = ({
         fontFamily: "'MS Sans Serif', 'Microsoft Sans Serif', sans-serif",
       }}
       onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside menu
+      role="menu"
+      aria-label="Start Menu"
     >
       {/* Start Menu Layout */}
       <div className="flex">
@@ -84,13 +86,15 @@ export const StartMenu: React.FC<StartMenuProps> = ({
                 focus:outline-win95-black
                 focus:outline-offset-[-2px]
               "
+              aria-label="Search applications"
+              role="searchbox"
             />
           </div>
 
           {/* Application list */}
-          <div className="py-1">
+          <div className="py-1" role="group" aria-label="Applications">
             {apps.length === 0 ? (
-              <div className="px-3 py-2 text-win95-black text-[11px]">
+              <div className="px-3 py-2 text-win95-black text-[11px]" role="status">
                 No applications available
               </div>
             ) : (
@@ -108,8 +112,10 @@ export const StartMenu: React.FC<StartMenuProps> = ({
                     transition-colors
                     cursor-pointer
                   "
+                  role="menuitem"
+                  aria-label={`Launch ${app.name}`}
                 >
-                  <span className="text-base">{app.icon}</span>
+                  <span className="text-base" aria-hidden="true">{app.icon}</span>
                   <span>{app.name}</span>
                 </button>
               ))

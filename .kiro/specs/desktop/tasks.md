@@ -203,7 +203,11 @@
     - _Requirements: 3.1, 3.5, 4.5_
 -
 
-- [ ] 8. Create application registry and integration
+- [x] 8. Create application registry and integration
+
+
+
+
 
 
 
@@ -216,7 +220,9 @@
     - Include default window sizes and positions
     - _Requirements: 4.1, 7.1_
   
-  - [ ] 8.2 Implement app launch flow
+  - [x] 8.2 Implement app launch flow
+
+
 
 
 
@@ -226,18 +232,26 @@
     - Call WindowManager.openWindow with app component
     - Pass app-specific props to window
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
+-
 
-- [ ] 9. Add keyboard shortcuts and accessibility
+- [x] 9. Add keyboard shortcuts and accessibility
 
 
 
-  - [ ] 9.1 Implement global keyboard handlers
+
+
+
+  - [x] 9.1 Implement global keyboard handlers
+
+
     - Add Windows key handler to toggle Start Menu
     - Add Escape key handler to close Start Menu
     - Add Alt+Tab handler for window cycling (basic)
     - _Requirements: 3.1, 3.5_
   
-  - [ ] 9.2 Add ARIA labels and roles
+  - [x] 9.2 Add ARIA labels and roles
+
+
     - Label Start button for screen readers
     - Add roles to Taskbar buttons
     - Label window controls

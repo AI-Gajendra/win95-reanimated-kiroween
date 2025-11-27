@@ -59,11 +59,13 @@ export const Taskbar: React.FC<TaskbarProps> = ({ onStartClick, startMenuOpen = 
   };
 
   return (
-    <div
+    <nav
       className="h-7 bg-win95-gray win95-outset flex items-center px-0.5 gap-0.5"
       style={{
         fontFamily: "'MS Sans Serif', 'Microsoft Sans Serif', sans-serif",
       }}
+      role="navigation"
+      aria-label="Taskbar"
     >
       {/* Start Button */}
       <button
@@ -79,13 +81,20 @@ export const Taskbar: React.FC<TaskbarProps> = ({ onStartClick, startMenuOpen = 
           ${startMenuOpen ? 'win95-pressed translate-x-[1px] translate-y-[1px]' : 'win95-outset'}
           hover:cursor-pointer
         `}
+        aria-label="Start Menu"
+        aria-expanded={startMenuOpen}
+        aria-haspopup="menu"
       >
-        <span className="text-base">🪟</span>
+        <span className="text-base" aria-hidden="true">🪟</span>
         <span>Start</span>
       </button>
 
       {/* Window List Area */}
-      <div className="flex-1 flex items-center gap-0.5 overflow-x-auto">
+      <div 
+        className="flex-1 flex items-center gap-0.5 overflow-x-auto"
+        role="group"
+        aria-label="Open windows"
+      >
         {windows
           .filter(w => !w.isMinimized)
           .map(window => (
@@ -104,8 +113,10 @@ export const Taskbar: React.FC<TaskbarProps> = ({ onStartClick, startMenuOpen = 
                 ${window.id === focusedWindow?.id ? 'win95-pressed' : 'win95-outset'}
               `}
               title={window.title}
+              aria-label={`${window.title} window`}
+              aria-pressed={window.id === focusedWindow?.id}
             >
-              <span>{window.icon}</span>
+              <span aria-hidden="true">{window.icon}</span>
               <span className="truncate">{window.title}</span>
             </button>
           ))}
@@ -114,11 +125,16 @@ export const Taskbar: React.FC<TaskbarProps> = ({ onStartClick, startMenuOpen = 
       {/* System Tray - Clock */}
       <div
         className="win95-inset px-2 py-0.5 bg-win95-gray"
+        role="status"
+        aria-label="System clock"
       >
-        <span className="font-win95 text-[11px] text-win95-black">
+        <time 
+          className="font-win95 text-[11px] text-win95-black"
+          dateTime={currentTime.toISOString()}
+        >
           {formatTime(currentTime)}
-        </span>
+        </time>
       </div>
-    </div>
+    </nav>
   );
 };
