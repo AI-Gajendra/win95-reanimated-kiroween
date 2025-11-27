@@ -7,6 +7,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { WindowState, WindowProps, AppDefinition } from './types';
+import { getAppDefinition, getRegisteredApps as getAppsFromRegistry } from './appRegistry';
 
 interface WindowManagerContextType {
   windows: WindowState[];
@@ -18,17 +19,10 @@ interface WindowManagerContextType {
   updateWindowPosition: (windowId: string, position: { x: number; y: number }) => void;
   updateWindowSize: (windowId: string, size: { width: number; height: number }) => void;
   getWindow: (windowId: string) => WindowState | undefined;
+  getRegisteredApps: () => AppDefinition[];
 }
 
 const WindowManagerContext = createContext<WindowManagerContextType | undefined>(undefined);
-
-// Application registry (will be populated by apps)
-const APP_REGISTRY: Record<string, AppDefinition> = {};
-
-export function registerApp(app: AppDefinition): void {
-  APP_REGISTRY[app.id] = app;
-  console.log(`[Window Manager] Registered app: ${app.name}`);
-}
 
 interface WindowManagerProviderProps {
   children: ReactNode;
@@ -40,7 +34,7 @@ export function WindowManagerProvider({ children }: WindowManagerProviderProps) 
   const [windowCounter, setWindowCounter] = useState(0);
 
   const openWindow = useCallback((appId: string, props?: WindowProps): string => {
-    const app = APP_REGISTRY[appId];
+    const app = getAppDefinition(appId);
     
     if (!app) {
       console.error(`[Window Manager] App not found: ${appId}`);
@@ -147,6 +141,10 @@ export function WindowManagerProvider({ children }: WindowManagerProviderProps) 
     return windows.find(w => w.id === windowId);
   }, [windows]);
 
+  const getRegisteredApps = useCallback((): AppDefinition[] => {
+    return getAppsFromRegistry();
+  }, []);
+
   const value: WindowManagerContextType = {
     windows,
     openWindow,
@@ -156,7 +154,8 @@ export function WindowManagerProvider({ children }: WindowManagerProviderProps) 
     maximizeWindow,
     updateWindowPosition,
     updateWindowSize,
-    getWindow
+    getWindow,
+    getRegisteredApps
   };
 
   return (
