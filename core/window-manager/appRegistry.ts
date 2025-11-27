@@ -33,7 +33,7 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
     name: 'Explorer',
     icon: '📁',
     component: Explorer,
-    defaultSize: { width: 700, height: 500 },
+    defaultSize: { width: 800, height: 600 },
     defaultPosition: { x: 120, y: 120 }
   },
   
