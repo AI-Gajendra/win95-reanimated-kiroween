@@ -1,6 +1,7 @@
 {
   "name": "win95-reanimated",
   "version": "1.0.0",
+  "type": "module",
   "description": "Resurrect the classic Windows 95 desktop as a modern, AI-augmented environment",
   "main": "dist/electron/main.js",
   "scripts": {
