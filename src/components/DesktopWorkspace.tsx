@@ -89,6 +89,7 @@ export const DesktopWorkspace: React.FC = () => {
 
   return (
     <div
+      role="main"
       className="w-screen h-screen bg-win95-teal flex flex-col"
       style={{
         fontFamily: "'MS Sans Serif', 'Microsoft Sans Serif', sans-serif",

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Application Launch Diagnostics",
+  "description": "Performs initial diagnostics and logs system status when the Win95 Reanimated application launches. Checks VFS status, generates a welcome message using AI, and creates a system log file.",
+  "version": "1",
+  "when": {
+    "type": "sessionStart"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The Win95 Reanimated application has just launched. Please perform the following startup diagnostics:\n\n1. Log the current launch time\n2. Check the VFS (Virtual File System) status by reading the root folder contents\n3. Generate a brief welcome message for Win95 Reanimated using the AI engine\n4. Create a system log file at /system.log with the following information:\n   - Launch time (ISO format)\n   - VFS status (number of root items)\n   - AI Engine status (Ready or Active based on usage stats)\n   - System ready message\n\n5. Log all diagnostic results to the console\n\nHandle any errors gracefully and log them appropriately. This hook demonstrates automated startup tasks using Kiro's AI capabilities."
+  }
+}

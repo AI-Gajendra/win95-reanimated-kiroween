@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Start Menu Search Hook",
+  "description": "Interprets natural language queries typed in the Start Menu search box using the AI Engine to map user intent to actions like opening apps, creating documents, or searching files",
+  "version": "1",
+  "when": {
+    "type": "userPrompt"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A user has entered a search query in the Start Menu: \"{prompt}\". \n\nAnalyze this query and determine the user's intent. The query could be:\n1. A request to open an application (e.g., \"open notepad\", \"launch explorer\")\n2. A request to create a document with specific content (e.g., \"create a todo list\", \"new document\")\n3. A search for files (e.g., \"find documents\", \"search for readme\")\n4. An unknown/unclear request\n\nBased on the intent, provide a structured response with:\n- intent.type: One of 'openApp', 'createDocument', 'search', or 'unknown'\n- intent.parameters: Relevant parameters like appId, content, or searchTerm\n- A user-friendly message explaining what action will be taken\n\nConsider the available apps in the system: notepad, explorer, and any registered applications.\n\nIf the intent is unclear, provide helpful suggestions for what the user might try instead."
+  }
+}

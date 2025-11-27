@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Notepad Text Edit Analysis",
+  "description": "Triggered when text is edited in Notepad. Analyzes document content after user stops typing (3 second debounce) and generates outline, summary, and metadata including word count, character count, line count, and keywords for context awareness.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "apps/notepad/Notepad.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A text edit event has occurred in the Notepad application. Please analyze the current document content and generate:\n\n1. A concise summary/outline of the document content\n2. Metadata including:\n   - Word count\n   - Character count\n   - Line count\n   - Key topics or keywords (extract capitalized words that appear to be proper nouns or important terms)\n   - Timestamp of analysis\n\nOnly process documents with substantial content (at least 200 characters). The analysis should provide continuous context awareness to help understand what the user is working on.\n\nIf the content is too short, skip the analysis. Focus on extracting meaningful insights that would be useful for understanding the document's purpose and content at a glance."
+  }
+}

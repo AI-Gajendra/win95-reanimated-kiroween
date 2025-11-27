@@ -18,6 +18,7 @@ interface WindowManagerContextType {
   maximizeWindow: (windowId: string) => void;
   updateWindowPosition: (windowId: string, position: { x: number; y: number }) => void;
   updateWindowSize: (windowId: string, size: { width: number; height: number }) => void;
+  updateWindowTitle: (windowId: string, title: string) => void;
   getWindow: (windowId: string) => WindowState | undefined;
   getRegisteredApps: () => AppDefinition[];
 }
@@ -137,6 +138,16 @@ export function WindowManagerProvider({ children }: WindowManagerProviderProps) 
     );
   }, []);
 
+  const updateWindowTitle = useCallback((windowId: string, title: string) => {
+    setWindows(prev => 
+      prev.map(w => 
+        w.id === windowId 
+          ? { ...w, title }
+          : w
+      )
+    );
+  }, []);
+
   const getWindow = useCallback((windowId: string): WindowState | undefined => {
     return windows.find(w => w.id === windowId);
   }, [windows]);
@@ -154,6 +165,7 @@ export function WindowManagerProvider({ children }: WindowManagerProviderProps) 
     maximizeWindow,
     updateWindowPosition,
     updateWindowSize,
+    updateWindowTitle,
     getWindow,
     getRegisteredApps
   };

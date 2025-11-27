@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "File Creation Summarizer",
+  "description": "Automatically summarizes new text files (txt, md, json, js, ts, html, css) when created and stores metadata including summary, word count, and character count in a companion .meta file",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "*.txt",
+      "*.md",
+      "*.json",
+      "*.js",
+      "*.ts",
+      "*.html",
+      "*.css"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new file has been created at {{filePath}}. Please read the file content, and if it's a text file with at least 100 characters, generate a summary using the AI Engine. Then create a companion metadata file at {{filePath}}.meta containing: the file path, the AI-generated summary, creation timestamp, word count, and character count in JSON format. Use the aiClient from core/ai-engine/aiClient.ts for summarization and vfs from core/file-system/vfs.ts for file operations."
+  }
+}

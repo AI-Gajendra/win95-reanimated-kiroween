@@ -257,20 +257,34 @@
     - Label window controls
     - _Requirements: 1.3, 8.2_
 
-- [ ]* 10. Testing and polish
-  - [ ]* 10.1 Write unit tests for Desktop component
+- [x] 10. Testing and polish
+
+
+
+
+
+  - [x] 10.1 Write unit tests for Desktop component
+
+
+
     - Test boot sequence state transitions
     - Test Start Menu open/close logic
     - Test window context operations
     - _Requirements: All_
   
-  - [ ]* 10.2 Write integration tests
+  - [x] 10.2 Write integration tests
+
+
+
     - Test complete boot-to-desktop flow
     - Test app launch from Start Menu
     - Test window operations through UI
     - _Requirements: All_
   
-  - [ ]* 10.3 Visual regression tests
+  - [x] 10.3 Visual regression tests
+
+
+
     - Capture screenshots of desktop, Taskbar, Start Menu
     - Verify Win95 styling consistency
     - _Requirements: 1.4_
