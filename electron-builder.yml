@@ -1,0 +1,173 @@
+# Electron Builder Configuration
+# Win95 Reanimated - Cross-platform desktop application packaging
+# Requirements: 11.1, 11.2, 11.3, 11.4, 11.5
+
+# Application identification
+appId: com.win95reanimated.app
+productName: Win95 Reanimated
+copyright: Copyright © 2025 Win95 Reanimated
+
+# Build directories
+directories:
+  output: release
+  buildResources: assets
+
+# Files to include in the build
+files:
+  - dist/**/*
+  - assets/**/*
+  - "!**/*.map"
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
+  - "!**/node_modules/*.d.ts"
+  - "!**/node_modules/.bin"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
+  - "!.editorconfig"
+  - "!**/._*"
+  - "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}"
+
+# Extra resources to copy (not packed into asar)
+extraResources:
+  - from: assets/
+    to: assets/
+    filter:
+      - "**/*"
+
+# Asar archive configuration
+asar: true
+asarUnpack:
+  - "**/*.node"
+
+# Compression level (store, normal, maximum)
+compression: normal
+
+# Windows configuration
+# Requirements: 11.2
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+  icon: assets/icon.ico
+  artifactName: "${productName}-${version}-${arch}-setup.${ext}"
+
+# NSIS installer configuration for Windows
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  installerHeaderIcon: assets/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Win95 Reanimated
+  include: null
+  script: null
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+  menuCategory: false
+
+# macOS configuration
+# Requirements: 11.3, 11.5
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  icon: assets/icon.icns
+  category: public.app-category.utilities
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  # Code signing (optional - requires Apple Developer certificate)
+  # identity: null  # Set to your Apple Developer ID for production
+  # entitlements: assets/entitlements.mac.plist
+  # entitlementsInherit: assets/entitlements.mac.plist
+
+# DMG configuration for macOS
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380
+  backgroundColor: "#008080"
+  title: "${productName} ${version}"
+
+# Linux configuration
+# Requirements: 11.4
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+    - target: rpm
+      arch:
+        - x64
+  icon: assets/icon.png
+  category: Utility
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  synopsis: Windows 95 desktop experience reanimated
+  description: Resurrect the classic Windows 95 desktop as a modern, AI-augmented environment
+  desktop:
+    Name: Win95 Reanimated
+    Comment: Windows 95 desktop experience
+    Categories: Utility;System;
+
+# AppImage configuration
+appImage:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  license: LICENSE
+
+# Debian package configuration
+deb:
+  depends:
+    - gconf2
+    - gconf-service
+    - libnotify4
+    - libappindicator1
+    - libxtst6
+    - libnss3
+  priority: optional
+  compression: xz
+
+# RPM package configuration
+rpm:
+  depends:
+    - libnotify
+    - libappindicator
+    - libXtst
+    - nss
+
+# Publish configuration for auto-updates
+# Requirements: 12.1, 12.4
+# Configure to use GitHub releases as the update server
+# To use a different provider, change the provider and add appropriate settings
+publish:
+  provider: github
+  owner: "${GH_OWNER:-win95-reanimated}"
+  repo: "${GH_REPO:-win95-reanimated}"
+  releaseType: release
+  # Set to 'draft' during development, 'release' for production
+  # releaseType: draft
+
+# Build hooks (optional)
+# beforeBuild: scripts/beforeBuild.js
+# afterPack: scripts/afterPack.js
+# afterSign: scripts/afterSign.js

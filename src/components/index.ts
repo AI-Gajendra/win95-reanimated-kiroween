@@ -2,6 +2,7 @@ export { BootScreen } from './BootScreen';
 export { Button } from './Button';
 export { Panel } from './Panel';
 export { TitleBar } from './TitleBar';
+export { ElectronTitleBar } from './ElectronTitleBar';
 export { Desktop } from './Desktop';
 export { DesktopWorkspace } from './DesktopWorkspace';
 export { Taskbar } from './Taskbar';
