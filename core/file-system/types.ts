@@ -35,12 +35,12 @@ export interface FileMetadata {
   path: string;
   type: 'file' | 'folder';
   size: number;
-  createdAt: Date;
-  modifiedAt: Date;
+  createdAt: string;
+  modifiedAt: string;
 }
 
 export interface VFSEvent {
-  type: 'fileCreated' | 'fileModified' | 'fileDeleted' | 'folderCreated' | 'folderDeleted';
+  type: 'fileCreated' | 'fileModified' | 'fileDeleted' | 'folderCreated' | 'folderDeleted' | 'folderModified';
   path: string;
   timestamp: Date;
 }
