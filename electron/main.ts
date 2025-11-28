@@ -7,8 +7,13 @@
 import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, crashReporter, dialog, session } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import Store from 'electron-store';
-import { autoUpdaterManager } from './autoUpdater';
+import { autoUpdaterManager } from './autoUpdater.js';
+
+// ES Module compatibility - __dirname is not available in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Enable hot reload in development mode.

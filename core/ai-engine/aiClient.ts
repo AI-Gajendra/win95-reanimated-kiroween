@@ -7,8 +7,11 @@
 
 import { AIProvider } from './providers/base';
 import { MockProvider } from './providers/mock';
+import { TestProvider } from './providers/test';
+import { OpenAIProvider } from './providers/openai';
 import { ResponseCache } from './cache';
 import { UsageTracker } from './usage';
+import { makeCancellable } from './cancellable';
 import { 
   AIConfig, 
   RewriteStyle, 
@@ -19,7 +22,18 @@ import {
   CancellablePromise 
 } from './types';
 
-const DEFAULT_CONFIG: AIConfig = {
+/**
+ * Default configuration for the AI Engine.
+ * 
+ * - provider: 'mock' - Uses mock provider by default (no API key required)
+ * - timeout: 30000ms - 30 second timeout for AI operations
+ * - maxRetries: 2 - Retry failed requests up to 2 times
+ * - enableCache: true - Cache responses for identical inputs
+ * - enableUsageTracking: true - Track usage statistics
+ * 
+ * Requirements: 6.1, 8.4
+ */
+export const DEFAULT_CONFIG: AIConfig = {
   provider: 'mock',
   timeout: 30000,
   maxRetries: 2,
@@ -55,7 +69,7 @@ class AIClient {
       abortController.signal
     );
 
-    return this.makeCancellable(promise, abortController);
+    return makeCancellable(promise, abortController);
   }
 
   /**
@@ -71,7 +85,7 @@ class AIClient {
       abortController.signal
     );
 
-    return this.makeCancellable(promise, abortController);
+    return makeCancellable(promise, abortController);
   }
 
   /**
@@ -87,7 +101,7 @@ class AIClient {
       abortController.signal
     ) as Promise<Intent>;
 
-    return this.makeCancellable(promise, abortController);
+    return makeCancellable(promise, abortController);
   }
 
   /**
@@ -103,7 +117,7 @@ class AIClient {
       abortController.signal
     ) as Promise<FolderExplanation>;
 
-    return this.makeCancellable(promise, abortController);
+    return makeCancellable(promise, abortController);
   }
 
   /**
@@ -135,21 +149,45 @@ class AIClient {
 
   // Private methods
 
+  /**
+   * Execute an AI operation with caching, timeout, and error handling.
+   * 
+   * This method wraps all AI operations to provide:
+   * - Response caching (if enabled)
+   * - Timeout handling
+   * - Cancellation support
+   * - Error handling with fallback responses
+   * - Usage tracking
+   * 
+   * @param operationType - The type of operation (summarize, rewrite, etc.)
+   * @param operation - The async operation to execute
+   * @param input - The input data (used for cache key generation)
+   * @param signal - AbortSignal for cancellation support
+   * @returns The operation result or a fallback response on error
+   * 
+   * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 9.1, 9.2, 9.3, 9.4
+   */
   private async executeOperation<T>(
     operationType: string,
     operation: () => Promise<T>,
-    input: any,
+    input: unknown,
     signal: AbortSignal
   ): Promise<T> {
     try {
       // Check cache if enabled
       if (this.config.enableCache) {
-        const cacheKey = this.cache.generateKey(operationType, input);
-        const cached = this.cache.get(cacheKey);
-        
-        if (cached) {
-          console.log(`[AI Engine] Cache hit for ${operationType}`);
-          return JSON.parse(cached) as T;
+        try {
+          const cacheKey = this.cache.generateKey(operationType, input);
+          const cached = this.cache.get(cacheKey);
+          
+          if (cached) {
+            console.log(`[AI Engine] Cache hit for ${operationType}`);
+            return JSON.parse(cached) as T;
+          }
+        } catch (cacheError) {
+          // Log cache errors but continue with operation
+          // Requirement 7.2: Log error details to console
+          console.warn(`[AI Engine] Cache read error for ${operationType}:`, cacheError);
         }
       }
 
@@ -158,92 +196,171 @@ class AIClient {
 
       // Cache result if enabled
       if (this.config.enableCache) {
-        const cacheKey = this.cache.generateKey(operationType, input);
-        this.cache.set(cacheKey, JSON.stringify(result));
+        try {
+          const cacheKey = this.cache.generateKey(operationType, input);
+          this.cache.set(cacheKey, JSON.stringify(result));
+        } catch (cacheError) {
+          // Log cache errors but don't fail the operation
+          console.warn(`[AI Engine] Cache write error for ${operationType}:`, cacheError);
+        }
       }
 
       // Track usage if enabled
       if (this.config.enableUsageTracking) {
-        this.usage.track(operationType);
+        try {
+          this.usage.track(operationType);
+        } catch (usageError) {
+          // Log usage tracking errors but don't fail the operation
+          console.warn(`[AI Engine] Usage tracking error for ${operationType}:`, usageError);
+        }
       }
 
       return result;
     } catch (error) {
+      // Requirement 7.2: Log error details to console for debugging
       console.error(`[AI Engine] ${operationType} failed:`, error);
       
+      // Requirement 9.3, 9.4: Handle cancellation
+      // Check if operation was cancelled - this should throw, not return fallback
       if (signal.aborted) {
         throw new Error('Operation cancelled by user');
       }
 
-      // Return fallback response
-      return this.getFallbackResponse(operationType, error) as T;
+      // Check if error message indicates cancellation
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.includes('cancelled') || errorMessage.includes('canceled')) {
+        throw new Error('Operation cancelled by user');
+      }
+
+      // Requirement 7.1: Catch error and return fallback response
+      // Requirement 7.5: Never throw unhandled exceptions to calling code
+      return this.getFallbackResponse<T>(operationType, error);
     }
   }
 
+  /**
+   * Execute an operation with timeout and cancellation support.
+   * 
+   * Creates a timeout promise based on config, races operation against timeout,
+   * handles AbortSignal for cancellation, catches and logs errors,
+   * and returns fallback responses on errors.
+   * 
+   * @param operation - The async operation to execute
+   * @param signal - AbortSignal for cancellation support
+   * @returns The operation result or throws on timeout/cancellation
+   * 
+   * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 9.3, 9.4
+   */
   private async executeWithTimeout<T>(
     operation: () => Promise<T>,
     signal: AbortSignal
   ): Promise<T> {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('AI operation timed out')), this.config.timeout);
-    });
+    // Check if already aborted before starting
+    if (signal.aborted) {
+      throw new Error('Operation cancelled by user');
+    }
 
-    const abortPromise = new Promise<never>((_, reject) => {
-      signal.addEventListener('abort', () => reject(new Error('Operation cancelled')));
-    });
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let abortHandler: (() => void) | null = null;
 
-    return Promise.race([
-      operation(),
-      timeoutPromise,
-      abortPromise
-    ]);
+    try {
+      // Create timeout promise based on config
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('AI operation timed out'));
+        }, this.config.timeout);
+      });
+
+      // Create abort promise for cancellation
+      const abortPromise = new Promise<never>((_, reject) => {
+        abortHandler = () => reject(new Error('Operation cancelled by user'));
+        signal.addEventListener('abort', abortHandler);
+      });
+
+      // Race operation promise against timeout and abort
+      const result = await Promise.race([
+        operation(),
+        timeoutPromise,
+        abortPromise
+      ]);
+
+      return result;
+    } finally {
+      // Clean up timeout timer to prevent memory leaks
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Clean up abort listener
+      if (abortHandler !== null) {
+        signal.removeEventListener('abort', abortHandler);
+      }
+    }
   }
 
-  private getFallbackResponse(operationType: string, error: any): any {
-    const message = error?.message || 'Unknown error';
+  /**
+   * Get a safe fallback response based on operation type.
+   * 
+   * Returns user-friendly error messages and safe default responses
+   * based on the type of operation that failed.
+   * 
+   * @param operationType - The type of AI operation that failed
+   * @param error - The error that occurred
+   * @returns A safe fallback response appropriate for the operation type
+   * 
+   * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
+   */
+  private getFallbackResponse<T>(operationType: string, error: unknown): T {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    if (message.includes('timeout')) {
-      return 'AI operation timed out. Please try again.';
+    // Determine the appropriate error message based on error type
+    let userMessage: string;
+    
+    if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+      // Requirement 7.4: IF a timeout occurs, return "AI operation timed out"
+      userMessage = 'AI operation timed out';
+    } else if (
+      errorMessage.includes('network') || 
+      errorMessage.includes('unavailable') ||
+      errorMessage.includes('fetch') ||
+      errorMessage.includes('Failed to fetch')
+    ) {
+      // Requirement 7.3: IF a network error occurs, return "AI service unavailable"
+      userMessage = 'AI service unavailable';
+    } else {
+      userMessage = 'AI service temporarily unavailable';
     }
 
-    if (message.includes('network') || message.includes('unavailable')) {
-      return 'AI service unavailable. Please try again later.';
-    }
-
-    // Operation-specific fallbacks
+    // Return operation-specific fallback responses
+    // These provide safe defaults that won't break the calling code
     switch (operationType) {
       case 'summarize':
-        return 'Summary unavailable at this time.';
+        return `${userMessage}. Summary could not be generated.` as T;
+      
       case 'rewrite':
-        return 'Rewrite unavailable at this time.';
+        return `${userMessage}. Text could not be rewritten.` as T;
+      
       case 'interpret':
+        // Return a valid Intent object with unknown type
         return {
           type: 'unknown',
           confidence: 0,
-          parameters: {}
-        };
+          parameters: {
+            searchTerm: userMessage
+          }
+        } as T;
+      
       case 'explainFolder':
+        // Return a valid FolderExplanation object
         return {
-          description: 'Folder analysis unavailable at this time.',
-          recommendations: [],
+          description: `${userMessage}. Folder analysis could not be completed.`,
+          recommendations: ['Please try again later when the AI service is available.'],
           folderPath: ''
-        };
+        } as T;
+      
       default:
-        return 'AI service temporarily unavailable.';
+        return `${userMessage}. Please try again later.` as T;
     }
-  }
-
-  private makeCancellable<T>(
-    promise: Promise<T>,
-    abortController: AbortController
-  ): CancellablePromise<T> {
-    const cancellablePromise = promise as CancellablePromise<T>;
-    
-    cancellablePromise.cancel = () => {
-      abortController.abort();
-    };
-    
-    return cancellablePromise;
   }
 
   private createProvider(): AIProvider {
@@ -252,9 +369,11 @@ class AIClient {
         return new MockProvider();
       
       case 'openai':
-        // TODO: Implement OpenAI provider
-        console.warn('[AI Engine] OpenAI provider not yet implemented, falling back to mock');
-        return new MockProvider();
+        if (!this.config.apiKey) {
+          console.warn('[AI Engine] OpenAI provider requires an API key, falling back to mock');
+          return new MockProvider();
+        }
+        return new OpenAIProvider(this.config.apiKey);
       
       case 'anthropic':
         // TODO: Implement Anthropic provider
@@ -262,9 +381,7 @@ class AIClient {
         return new MockProvider();
       
       case 'test':
-        // TODO: Implement test provider
-        console.warn('[AI Engine] Test provider not yet implemented, falling back to mock');
-        return new MockProvider();
+        return new TestProvider();
       
       default:
         console.warn(`[AI Engine] Unknown provider: ${this.config.provider}, falling back to mock`);
